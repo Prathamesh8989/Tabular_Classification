@@ -1,4 +1,4 @@
-Rice Morphological Classification using Custom Deep Feedforward Neural Networks
+# Rice Morphological Classification using Custom Deep Feedforward Neural Networks
 
 [![PyTorch](https://img.shields.io/badge/Framework-PyTorch%202.0+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![Scikit-Learn](https://img.shields.io/badge/Preprocessing-Scikit--Learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
@@ -9,7 +9,7 @@ An end-to-end Machine Learning pipeline built with PyTorch and Scikit-Learn to c
 
 ---
 
-## 📌 Table of Contents
+##  Table of Contents
 1. [Project Summary](#1-project-summary)
 2. [Results at a Glance](#2-results-at-a-glance)
 3. [Data Pipeline & Normalization Strategy](#3-data-pipeline--normalization-strategy)
@@ -62,7 +62,7 @@ The dataset uses 10 distinct morphological measurements to track variations in s
 ### 3.2 Max-Absolute Feature Scaling
 To balance features with widely differing scales (e.g., small decimal ratios versus large area pixel values), the pipeline applies a Max-Absolute scaling transformation across every input row vector:
 
-$$X_{normalized} = \frac{X}{\vert{}X\vert{}_{max}}$$
+$$X_{normalized} = \frac{X}{|X|_{max}}$$
 
 This binds feature activations between $0$ and $1$, preventing variables with large raw ranges from dominating the model's gradients.
 
@@ -102,4 +102,93 @@ The custom model (`MyModel`) is structured as a compact, highly optimized Feedfo
 | :--- | :---: | :---: | :---: | :--- |
 | **Linear Layer 1** | `[-1, 10]` | `[-1, 10]` | 110 | Input to Hidden Projection |
 | **Linear Layer 2** | `[-1, 10]` | `[-1, 1]` | 11 | Hidden to Single Logit Mapping |
-| **Sigmoid Non-Linearity** | `[-1, 1]` | `[-1, 1]` | 0 | Probability Activation Function
+| **Sigmoid Non-Linearity** | `[-1, 1]` | `[-1, 1]` | 0 | Probability Activation Function |
+
+* **Total Model Complexity**: 121 Parameters (100% Trainable)
+
+---
+
+## 5. Mathematical Foundations
+
+### 5.1 Fully Connected Transformation Model
+Each linear network layer applies a matrix multiplication operation to its input vectors, adding a bias vector to shift the output space:
+
+$$\mathbf{Y} = \mathbf{X}\mathbf{W}^T + \mathbf{b}$$
+
+Where $\mathbf{W}$ represents the learnable parameter weight matrix and $\mathbf{b}$ represents the local layer offset bias vector.
+
+### 5.2 Sigmoid Logistic Activation
+The final output layer uses a Sigmoid function to compress raw numerical logits into a valid $[0, 1]$ probability range for binary classification:
+
+$$\sigma(z) = \frac{1}{1 + e^{-z}}$$
+
+### 5.3 Binary Cross-Entropy Loss (BCELoss)
+The optimization loop calculates prediction error using standard Binary Cross-Entropy Loss:
+
+$$\mathcal{L}_{BCE} = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_i \log(p_i) + (1 - y_i) \log(1 - p_i) \right]$$
+
+Where $y_i$ is the actual binary target label ($0$ or $1$) and $p_i$ is the predicted probability output by the model's Sigmoid layer.
+
+---
+
+## 6. Training Progress & Convergence Performance
+
+The pipeline was run for 10 epochs using a fixed learning rate of `1e-3` via the Adam optimizer. The scaled validation loss steadily followed the training loss curve down to convergence, confirming clean generalization without overfitting.
+
+### Chronological Epoch Step Values
+
+| Epoch ID | Scaled Training Loss | Training Accuracy (%) | Scaled Validation Loss | Validation Accuracy (%) |
+| :---: | :---: | :---: | :---: | :---: |
+| **1** | 0.2552 | 74.66% | 0.0459 | 98.06% |
+| **2** | 0.1565 | 97.99% | 0.0226 | 98.94% |
+| **3** | 0.0747 | 98.25% | 0.0113 | 98.86% |
+| **5** | 0.0308 | 98.49% | 0.0055 | 98.83% |
+| **7** | 0.0224 | 98.55% | 0.0040 | 98.97% |
+| **9** | 0.0194 | 98.60% | 0.0035 | 99.05% |
+| **10** | 0.0187 | **98.59%** | 0.0034 | **99.08%** |
+
+### Final Benchmark Performance Score
+* **Unseen Evaluation Test Partition Accuracy**: **`98.68%`**
+
+---
+
+## 7. Inference & Production Deployment Playbook
+
+For production inference, new real-world feature vectors must match the model's training data distribution. Raw inputs are normalized on the fly by dividing each feature by the maximum absolute value observed during training before being passed to the model:
+
+[Raw Production User Inputs]
+│
+▼
+[Divide by original_df[column].abs().max() Vector]
+│
+▼
+[Normalized Input Tensor]
+│
+▼
+[Model Forward Calculation]
+│
+▼
+[Round Code Output Float]  ───► Class Output (0 or 1)
+
+
+---
+
+## 8. Installation & Reproduction Guide
+
+### 1. Environment Preparation
+Ensure you have Python 3.10+ and virtualenv configured locally:
+```bash
+git clone [https://github.com/your-username/rice-tabular-classification.git](https://github.com/your-username/rice-tabular-classification.git)
+cd rice-tabular-classification
+python3 -m venv ml_env
+source ml_env/bin/activate
+2. Dependency Ingestion
+Install the required machine learning and visualization packages via pip:
+
+Bash
+pip install torch torchsummary scikit-learn pandas numpy matplotlib
+3. Pipeline Ingestion & Invocations
+Ensure your feature source asset file (riceClassification.csv) is present in the workspace root directory, then execute the notebook:
+
+Bash
+jupyter notebook Tabular_Classification.ipynb
